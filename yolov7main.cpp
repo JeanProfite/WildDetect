@@ -29,30 +29,53 @@ int target_size = 640;
 
 int main(int argc, char** argv)
 {
-    const char* imagepath = argv[1];
+    const char* videopath = argv[1];
 
     if (argc != 2)
     {
-        fprintf(stderr, "Usage: %s [imagepath]\n", argv[0]);
+        fprintf(stderr, "Usage: %s [videopath]\n", argv[0]);
         return -1;
     }
 
     yolov7.load(target_size);
 
-    cv::Mat m = cv::imread(imagepath, 1);
-    if (m.empty())
+    cv::VideoCapture cap(videopath);
+
+    if(!cap.isOpened())
     {
-        fprintf(stderr, "cv::imread %s failed\n", imagepath);
+        fprintf(stderr, "cv::imread %s failed\n", videopath);
         return -1;
     }
 
+    int64 t1 = 0;
+    int64 t2 = 0;
+    double fps = -1;
+    std::string fps_text = "";
+    cv::Mat frame;
+    int key=0;
     std::vector<Object> objects;
-    yolov7.detect(m, objects);
-    yolov7.draw(m, objects);
 
-    cv::imshow("RPi4 - 1.95 GHz - 2 GB ram",m);
-//    cv::imwrite("test.jpg",m);
-    cv::waitKey(0);
+
+    while (cap.read(frame) and key !='q')
+    {
+        t1 = cv::getTickCount();
+
+        yolov7.detect(frame, objects);
+        yolov7.draw(frame, objects);
+
+        fps_text = "FPS: " + std::to_string(float(fps));
+        cv::putText(frame, fps_text, cv::Point(30, 30), cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 0, 255), 1);
+
+        cv::imshow("Inférence YOLOV7",frame);
+
+        t2 = cv::getTickCount();
+        fps = cv::getTickFrequency()  / (t2 - t1);
+
+        key = cv::waitKey(5);
+        //printf("t2-t1=%ld Freq=%lf\n",t2-t1,cv::getTickFrequency());
+        printf("FPS:%f  Nombre d'oiseaux:%lu\n",fps,objects.size());
+
+    }
 
     return 0;
 }
