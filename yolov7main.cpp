@@ -25,10 +25,11 @@
 
 #define DISPLAY
 #define RECORD
+//#define USECAM
 
 YoloV7 yolov7;
 const int target_size = 640;
-
+#ifdef USECAM
 std::string gstreamer_pipeline(int capture_width, int capture_height, int framerate, int display_width, int display_height)
 {
     return
@@ -41,29 +42,20 @@ std::string gstreamer_pipeline(int capture_width, int capture_height, int framer
         " width=(int)" + std::to_string(display_width) + ","
         " height=(int)" + std::to_string(display_height) + " ! appsink";
 }
-
+#endif
+#ifndef USECAM
+std::string gstreamer_pipeline(int capture_width, int capture_height, int framerate, int display_width, int display_height)
+{
+    return
+        "filesrc location=/home/pi/software/YoloV7-ncnn-Raspberry-Pi-4/bird_airport.mp4 ! qtdemux ! decodebin ! videoconvert ! videoscale ! autovideosink";
+}
+#endif
 int main(int argc, char** argv=NULL)
 {
 
     static const char *class_names[] =
     {
-        "person", "bicycle", "car", "motorcycle", "airplane", "bus", "train", "truck", "boat",
-        "traffic light",
-        "fire hydrant", "stop sign", "parking meter", "bench", "bird", "cat", "dog", "horse",
-        "sheep", "cow",
-        "elephant", "bear", "zebra", "giraffe", "backpack", "umbrella", "handbag", "tie",
-        "suitcase", "frisbee",
-        "skis", "snowboard", "sports ball", "kite", "baseball bat", "baseball glove",
-        "skateboard", "surfboard",
-        "tennis racket", "bottle", "wine glass", "cup", "fork", "knife", "spoon", "bowl",
-        "banana", "apple",
-        "sandwich", "orange", "broccoli", "carrot", "hot dog", "pizza", "donut", "cake",
-        "chair", "couch",
-        "potted plant", "bed", "dining table", "toilet", "tv", "laptop", "mouse", "remote",
-        "keyboard", "cell phone",
-        "microwave", "oven", "toaster", "sink", "refrigerator", "book", "clock", "vase",
-        "scissors", "teddy bear",
-        "hair drier", "toothbrush"
+        "Animal", "Bird"
     };
 
     //pipeline parameters
@@ -102,7 +94,7 @@ int main(int argc, char** argv=NULL)
     while (cap.read(frame) and key !='q')
     {
         t1 = cv::getTickCount();
-        yolov7.detect(frame, objects);
+        yolov7.detect(frame, objects,0.5);
         t2 = cv::getTickCount();
         fps = cv::getTickFrequency()  / (t2 - t1);
 
